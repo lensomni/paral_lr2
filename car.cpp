@@ -30,9 +30,10 @@ void Car::drive_stage(int stage) {
 
 void Car::race() {
     for (int stage = 1; stage <= STAGES; ++stage) {
+        Message start_msg;
+        msgrcv(barrier.msgid, &start_msg, sizeof(Message) - sizeof(long), MSG_START_STAGE, 0);
         drive_stage(stage);
-        barrier.wait(id, stage);     // ждём всех остальных
+        barrier.wait(id, stage);
     }
-
     std::cout << "🎉 Машина №" << id + 1 << " завершила всю гонку!\n";
 }

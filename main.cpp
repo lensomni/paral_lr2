@@ -36,6 +36,12 @@ int main() {
 
     for (int stage = 1; stage <= STAGES; ++stage) {
         std::cout << "\n=== ЭТАП " << stage << " ===\n";
+        Message start_msg;
+        start_msg.mtype = MSG_START_STAGE;
+        start_msg.stage = stage;
+        for (int i = 0; i < MAX_CARS; ++i) {
+            msgsnd(barrier.msgid, &start_msg, sizeof(Message) - sizeof(long), 0);
+        }
 
         // Ждём финиша всех машин
         Message results[MAX_CARS];
