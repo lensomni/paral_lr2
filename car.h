@@ -1,4 +1,5 @@
 #pragma once
+#include <time.h>
 #include "barrier.h"
 
 class Car {

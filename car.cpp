@@ -3,28 +3,30 @@
 Car::Car(int id, Barrier& barrier) : id(id), barrier(barrier) {}
 
 void Car::drive_stage(int stage) {
-    clock_t start = clock();
-    std::cout << "🚗 Машина " << (id + 1) 
-              << " начала этап " << stage << std::endl;
+    timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    std::cout << "🚗 Машина " << (id + 1) << " начала этап " << stage << std::endl;
 
     for (int p = 0; p <= 100; p += 10) {
-        std::cout << "   Машина " << (id + 1) 
-                  << " [" << std::string(p/5, '#') 
-                  << std::string(20 - p/5, '-') << "] " 
+        std::cout << "   Машина " << (id + 1)
+                  << " [" << std::string(p/5, '#')
+                  << std::string(20 - p/5, '-') << "] "
                   << p << "%" << std::endl;
-        usleep(120000);  // имитация движения (120 мс)
+        usleep(120000);
     }
-    clock_t end = clock();
-    double elapsed = double(end - start) / CLOCKS_PER_SEC;
 
-    std::cout << "🏁 Машина " << (id + 1) 
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double elapsed = (end.tv_sec - start.tv_sec) * 1000.0;
+    elapsed += (end.tv_nsec - start.tv_nsec) / 1000000.0;
+
+    std::cout << "🏁 Машина " << (id + 1)
               << " финишировала этап " << stage << "!" << std::endl;
 
     Message msg;
-    msg.mtype     = MSG_FINISH_STAGE;
-    msg.car_id    = id;
-    msg.stage     = stage;
-    msg.finish_time = static_cast<long>(elapsed * 1000);  // в миллисекундах для точности
+    msg.mtype = MSG_FINISH_STAGE;
+    msg.car_id = id;
+    msg.stage = stage;
+    msg.finish_time = static_cast<long>(elapsed);
     msgsnd(barrier.msgid, &msg, sizeof(Message) - sizeof(long), 0);
 }
 
