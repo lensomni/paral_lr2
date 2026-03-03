@@ -30,11 +30,17 @@ void Car::drive_stage(int stage) {
     msgsnd(barrier.msgid, &msg, sizeof(Message) - sizeof(long), 0);
 }
 
+
 void Car::race() {
     for (int stage = 1; stage <= STAGES; ++stage) {
+        // Ждём сигнала о начале этапа
         Message start_msg;
         msgrcv(barrier.msgid, &start_msg, sizeof(Message) - sizeof(long), MSG_START_STAGE, 0);
+
+        // Выполняем анимацию движения
         drive_stage(stage);
+
+        // Сообщаем арбитру о финише
         barrier.wait(id, stage);
     }
     std::cout << "🎉 Машина №" << id + 1 << " завершила всю гонку!\n";

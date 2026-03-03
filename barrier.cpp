@@ -15,27 +15,6 @@ Barrier::~Barrier() {
     std::cout << "[Барьер] Удалён\n";
 }
 
-// void Barrier::wait(int car_id, int stage) {
-//     Message msg;
-
-//     msg.mtype = MSG_FINISH_STAGE;
-//     msg.car_id = car_id;
-//     msg.stage = stage;
-//     if (msgsnd(msgid, &msg, sizeof(Message) - sizeof(long), 0) == -1) {
-//         perror("msgsnd (finish stage)");
-//         exit(1);
-//     }
-
-//     std::cout << "[Машина " << car_id + 1 << "] Сообщил о финише этапа " << stage << "\n";
-
-//     for (int i = 0; i < car_count; ++i) {
-//         if (msgrcv(msgid, &msg, sizeof(Message) - sizeof(long), MSG_FINISH_STAGE, 0) == -1) {
-//             perror("msgrcv (barrier wait)");
-//             exit(1);
-//         }
-//     }
-//     std::cout << "[Барьер] Все машины завершили этап " << stage << " → продолжаем!\n";
-// }
 
 void Barrier::wait(int car_id, int stage) {
     Message msg;
