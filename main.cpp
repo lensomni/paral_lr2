@@ -90,22 +90,43 @@ int main() {
         }
     }
 
-    std::cout << "\n=== ИТОГОВАЯ ТАБЛИЦА ===\n";
-    std::cout << "+------------+--------------+\n";
-    std::cout << "| Машина №  | Общие баллы  |\n";
-    std::cout << "+------------+--------------+\n";
-
-    for (int i = 0; i < MAX_CARS; ++i) {
-        printf("|     %2d     |      %3d      |\n", i + 1, total_points[i]);
-    }
-    std::cout << "+------------+--------------+\n";
-
     for (int i = 0; i < MAX_CARS; ++i) {
         int status;
         waitpid(pids[i], &status, 0);
         //std::cout << "[Арбитр] Машина " << i + 1 << " завершила гонку.\n";
     }
 
-    std::cout << "\nВсе машины финишировали! Гонка окончена.\n";
+    struct CarResult {
+        int car_id;
+        int points;
+    };
+    CarResult final_results[MAX_CARS];
+
+    for (int i = 0; i < MAX_CARS; ++i) {
+        final_results[i].car_id = i + 1;
+        final_results[i].points = total_points[i];
+    }
+
+    for (int i = 0; i < MAX_CARS - 1; ++i) {
+        for (int j = 0; j < MAX_CARS - i - 1; ++j) {
+            if (final_results[j].points < final_results[j + 1].points) {
+                std::swap(final_results[j], final_results[j + 1]);
+            }
+        }
+    }
+
+    std::cout << "\n=== ИТОГОВАЯ ТАБЛИЦА ===\n";
+    std::cout << "+------------+--------------+--------------+\n";
+    std::cout << "| Место     | Машина №     | Общие баллы |\n";
+    std::cout << "+------------+--------------+--------------+\n";
+
+    for (int i = 0; i < MAX_CARS; ++i) {
+        printf("|    %2d      |     %2d       |      %3d      |\n",
+            i + 1,
+            final_results[i].car_id,
+            final_results[i].points);
+    }
+    std::cout << "+------------+--------------+--------------+\n";
+
     return 0;
 }
