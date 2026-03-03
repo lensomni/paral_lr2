@@ -71,7 +71,7 @@ int main() {
             total_points[results[i].car_id] += results[i].points;
 
             // Отправляем результат машине (если нужно)
-            msgsnd(barrier.msgid, &results[i], sizeof(Message) - sizeof(long), 0);
+            //msgsnd(barrier.msgid, &results[i], sizeof(Message) - sizeof(long), 0);
         }
 
         // Красивый вывод результатов этапа

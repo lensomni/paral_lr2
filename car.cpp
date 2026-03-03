@@ -47,7 +47,7 @@ void Car::race() {
         Message start_msg;
         msgrcv(barrier.msgid, &start_msg, sizeof(Message) - sizeof(long), MSG_START_STAGE, 0);
         drive_stage(stage);
-        barrier.wait(id, stage);
+        //barrier.wait(id, stage);
     }
     std::cout << "🎉 Машина №" << id + 1 << " завершила всю гонку!\n";
 }
