@@ -22,4 +22,5 @@ struct Message {
     int  stage;           // номер этапа (1..3)
     int  place;           // место на этапе (заполняет арбитр)
     int  points;          // набранные баллы за этап
+    long finish_time;
 };

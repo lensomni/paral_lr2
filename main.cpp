@@ -32,6 +32,60 @@ int main() {
         }
     }
 
+    int total_points[MAX_CARS] = {0};
+
+    for (int stage = 1; stage <= STAGES; ++stage) {
+        std::cout << "\n=== ЭТАП " << stage << " ===\n";
+
+        // Ждём финиша всех машин
+        Message results[MAX_CARS];
+        for (int i = 0; i < MAX_CARS; ++i) {
+            msgrcv(barrier.msgid, &results[i], sizeof(Message) - sizeof(long), MSG_FINISH_STAGE, 0);
+        }
+
+        // Сортируем по времени финиша (простая сортировка пузырьком)
+        for (int i = 0; i < MAX_CARS - 1; ++i) {
+            for (int j = 0; j < MAX_CARS - i - 1; ++j) {
+                if (results[j].finish_time > results[j + 1].finish_time) {
+                    std::swap(results[j], results[j + 1]);
+                }
+            }
+        }
+
+        // Начисляем баллы и места
+        int points_table[] = {25, 18, 15, 12, 10};  // 1–5 место
+        for (int i = 0; i < MAX_CARS; ++i) {
+            results[i].place = i + 1;
+            results[i].points = points_table[i];
+            total_points[results[i].car_id] += results[i].points;
+
+            // Отправляем результат машине (если нужно)
+            msgsnd(barrier.msgid, &results[i], sizeof(Message) - sizeof(long), 0);
+        }
+
+        // Красивый вывод результатов этапа
+        std::cout << "\nРезультаты этапа " << stage << ":\n";
+        std::cout << "┌─────┬────────────┬────────────┬────────┐\n";
+        std::cout << "│ Место │ Машина №   │ Время (с)  │ Баллы  │\n";
+        std::cout << "├─────┼────────────┼────────────┼────────┤\n";
+        for (int i = 0; i < MAX_CARS; ++i) {
+            std::cout << "│  " << results[i].place 
+                      << "  │     " << results[i].car_id + 1 
+                      << "     │ " << results[i].finish_time / 1000.0 
+                      << " │  " << results[i].points << "   │\n";
+        }
+        std::cout << "└─────┴────────────┴────────────┴────────┘\n";
+    }
+
+    std::cout << "\n=== ИТОГОВАЯ ТАБЛИЦА ===\n";
+    std::cout << "┌────────────┬────────────┐\n";
+    std::cout << "│ Машина №   │ Общие баллы│\n";
+    std::cout << "├────────────┼────────────┤\n";
+    for (int i = 0; i < MAX_CARS; ++i) {
+        std::cout << "│     " << i + 1 << "      │     " << total_points[i] << "     │\n";
+    }
+    std::cout << "└────────────┴────────────┘\n";
+
     // Арбитр ждёт завершения всех машин
     for (int i = 0; i < MAX_CARS; ++i) {
         int status;

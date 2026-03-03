@@ -2,7 +2,8 @@
 #include "common.h"
 
 class Barrier {
-private:
+//private:
+public:
     int msgid;
     int car_count;
 

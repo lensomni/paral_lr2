@@ -3,6 +3,7 @@
 Car::Car(int id, Barrier& barrier) : id(id), barrier(barrier) {}
 
 void Car::drive_stage(int stage) {
+    clock_t start = clock();
     std::cout << "🚗 Машина " << (id + 1) 
               << " начала этап " << stage << std::endl;
 
@@ -13,9 +14,18 @@ void Car::drive_stage(int stage) {
                   << p << "%" << std::endl;
         usleep(120000);  // имитация движения (120 мс)
     }
+    clock_t end = clock();
+    double elapsed = double(end - start) / CLOCKS_PER_SEC;
 
     std::cout << "🏁 Машина " << (id + 1) 
               << " финишировала этап " << stage << "!" << std::endl;
+
+    Message msg;
+    msg.mtype     = MSG_FINISH_STAGE;
+    msg.car_id    = id;
+    msg.stage     = stage;
+    msg.finish_time = static_cast<long>(elapsed * 1000);  // в миллисекундах для точности
+    msgsnd(barrier.msgid, &msg, sizeof(Message) - sizeof(long), 0);
 }
 
 void Car::race() {
