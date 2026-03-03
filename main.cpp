@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <ctime>
 #include <cstdlib>
+#include <limits>
 
 int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
@@ -86,6 +87,12 @@ int main() {
                       << " │  " << results[i].points << "   │\n";
         }
         std::cout << "└─────┴────────────┴────────────┴────────┘\n";
+
+        if (stage < STAGES) {
+            std::cout << "\nНажмите Enter, чтобы продолжить...";
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cin.get();
+        }
     }
 
     std::cout << "\n=== ИТОГОВАЯ ТАБЛИЦА ===\n";
