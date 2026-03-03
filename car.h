@@ -5,7 +5,7 @@ class Car {
 private:
     int id;
     Barrier& barrier;
-    int total_points = 0;
+    //int total_points = 0;
 
 public:
     Car(int id, Barrier& barrier);
