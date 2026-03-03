@@ -2,7 +2,7 @@
 
 Car::Car(int id, Barrier& barrier) : id(id), barrier(barrier) {
     srand(time(NULL) + id);
-    speed = 100 + (rand() % 51);  // 10–30 м/с
+    speed = 100 + (rand() % 51);  
 }
 
 void Car::drive_stage(int stage) {
@@ -14,25 +14,24 @@ void Car::drive_stage(int stage) {
 
     int distance_covered = 0;
     while (distance_covered < DISTANCE) {
-        // Вычисляем пройденное расстояние
+
         int progress = (distance_covered * 100) / DISTANCE;
         std::cout << "   Машина " << (id + 1)
                   << " [" << std::string(progress / 5, '#')
                   << std::string(20 - progress / 5, '-') << "] "
                   << progress << "%" << std::endl;
 
-        // Задержка в зависимости от скорости
-        usleep(1000000 / speed);  // Чем выше скорость, тем меньше задержка
-        distance_covered += speed;  // Увеличиваем пройденное расстояние
+        usleep(1000000 / speed);  
+        distance_covered += speed;  
     }
 
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed = (end.tv_sec - start.tv_sec) * 1000.0;
     elapsed += (end.tv_nsec - start.tv_nsec) / 1000000.0;
 
-    std::cout << "🏁 Машина " << (id + 1)
-              << " финишировала этап " << stage
-              << " за " << elapsed << " мс" << std::endl;
+    // std::cout << "Машина " << (id + 1)
+    //           << " финишировала этап " << stage
+    //           << " за " << elapsed << " мс" << std::endl;
 
     Message msg;
     msg.mtype = MSG_FINISH_STAGE;
@@ -49,5 +48,5 @@ void Car::race() {
         drive_stage(stage);
         //barrier.wait(id, stage);
     }
-    std::cout << "🎉 Машина №" << id + 1 << " завершила всю гонку!\n";
+    //std::cout << "Машина №" << id + 1 << " завершила всю гонку!\n";
 }

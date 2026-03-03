@@ -2,7 +2,6 @@
 #include "common.h"
 
 class Barrier {
-//private:
 public:
     int msgid;
     int car_count;
@@ -10,5 +9,5 @@ public:
 public:
     Barrier(key_t key, int cars = MAX_CARS);
     ~Barrier();
-    void wait(int car_id, int stage);   // каждый автомобиль вызывает после финиша этапа
+    void wait(int car_id, int stage); 
 };

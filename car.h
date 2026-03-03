@@ -9,6 +9,6 @@ private:
 
 public:
     Car(int id, Barrier& barrier);
-    void race();                    // главный цикл автомобиля
-    void drive_stage(int stage);    // имитация прохождения этапа
+    void race();                   
+    void drive_stage(int stage);   
 };
