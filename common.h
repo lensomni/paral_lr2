@@ -10,17 +10,14 @@
 #define MAX_CARS  5
 #define STAGES    3
 
-// Типы сообщений
-#define MSG_START_STAGE   1     // Арбитр → всем машинам: "Начался этап N"
-#define MSG_FINISH_STAGE  2     // Машина → Арбитру: "Я финишировал этап N"
-#define MSG_RESULT        3     // Арбитр → машине: "Твоё место на этапе N — X"
+#define MSG_START_STAGE   1
+#define MSG_FINISH_STAGE  2
 
-// Структура сообщения
 struct Message {
-    long mtype;           // тип сообщения (MSG_START_STAGE, etc.)
-    int  car_id;          // номер машины (0..4)
-    int  stage;           // номер этапа (1..3)
-    int  place;           // место на этапе (заполняет арбитр)
-    int  points;          // набранные баллы за этап
-    long finish_time;
+    long mtype;
+    int  car_id;
+    int  stage;
+    long finish_time_ms;  // миллисекунды
+    int  place;
+    int  points;
 };

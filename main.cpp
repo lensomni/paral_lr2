@@ -10,10 +10,10 @@
 int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
     srand(time(NULL));
-
+// нов ветка
     std::cout << "🏎️ СИМУЛЯЦИЯ ГОНОК НАЧИНАЕТСЯ!\n\n";
 
-    key_t barrier_key = ftok(".", 'B');
+    key_t barrier_key = ftok("/tmp", 'B');
     Barrier barrier(barrier_key);
 
     pid_t pids[MAX_CARS];
@@ -37,6 +37,17 @@ int main() {
     for (int stage = 1; stage <= STAGES; ++stage) {
         std::cout << "\n=== ЭТАП " << stage << " ===\n";
 
+        // 1. Отправляем сигнал старта всем машинам
+        Message start_msg{};
+        start_msg.mtype = MSG_START_STAGE;
+        start_msg.stage = stage;
+        for (int i = 0; i < MAX_CARS; ++i) {
+            if (msgsnd(barrier.msgid, &start_msg, sizeof(Message) - sizeof(long), 0) == -1) {
+                perror("msgsnd start");
+                exit(1);
+            }
+        }
+
         // Ждём финиша всех машин
         Message results[MAX_CARS];
         for (int i = 0; i < MAX_CARS; ++i) {
@@ -46,7 +57,7 @@ int main() {
         // Сортируем по времени финиша (простая сортировка пузырьком)
         for (int i = 0; i < MAX_CARS - 1; ++i) {
             for (int j = 0; j < MAX_CARS - i - 1; ++j) {
-                if (results[j].finish_time > results[j + 1].finish_time) {
+                if (results[j].finish_time_ms > results[j + 1].finish_time_ms) {
                     std::swap(results[j], results[j + 1]);
                 }
             }
@@ -71,7 +82,7 @@ int main() {
         for (int i = 0; i < MAX_CARS; ++i) {
             std::cout << "│  " << results[i].place 
                       << "  │     " << results[i].car_id + 1 
-                      << "     │ " << results[i].finish_time / 1000.0 
+                      << "     │ " << results[i].finish_time_ms / 1000.0 
                       << " │  " << results[i].points << "   │\n";
         }
         std::cout << "└─────┴────────────┴────────────┴────────┘\n";

@@ -30,15 +30,10 @@ void Barrier::wait(int car_id, int stage) {
 
     std::cout << "[Машина " << car_id + 1 << "] Сообщил о финише этапа " << stage << "\n";
 
-    // 2. Ждём, пока ВСЕ 5 машин пришлют сообщение о финише
-    // for (int i = 0; i < car_count; ++i) {
-    //     msgrcv(msgid, &msg, sizeof(Message) - sizeof(long), MSG_FINISH_STAGE, 0);
-    // }
-    for (int i = 0; i < car_count; ++i) {
-        if (msgrcv(msgid, &msg, sizeof(Message) - sizeof(long), MSG_FINISH_STAGE, 0) == -1) {
-            perror("msgrcv (barrier wait)");
-            exit(1);
-        }
+
+    if (msgrcv(msgid, &msg, sizeof(Message) - sizeof(long), MSG_FINISH_STAGE, 0) == -1) {
+        perror("msgrcv (barrier wait)");
+        exit(1);
     }
-    std::cout << "[Барьер] Все машины завершили этап " << stage << " → продолжаем!\n";
+    
 }
