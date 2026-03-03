@@ -9,13 +9,12 @@ void Car::drive_stage(int stage) {
     timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-
     int line = 5 + id * 3;
     int pos = 0; 
 
-    std::cout << "\033[" << line << ";0H\033[K\033[" << pos << "C┌--|▀▀----▀▀\\";
-    std::cout << "\033[" << (line + 1) << ";0H\033[K\033[" << pos << "C│ -|CAR: " << (id + 1) << " |";
-    std::cout << "\033[" << (line + 2) << ";0H\033[K\033[" << pos << "C└--|▄▄----▄▄/";
+    std::cout << "\033[" << line     << ";0H\033[K\033[" << pos << "C    ______";
+    std::cout << "\033[" << (line+1) << ";0H\033[K\033[" << pos << "C __/  __  \\__";
+    std::cout << "\033[" << (line+2) << ";0H\033[K\033[" << pos << "C'---O----O----'" ;
     fflush(stdout);
 
     int distance_covered = 0;
@@ -23,10 +22,9 @@ void Car::drive_stage(int stage) {
         int progress = (distance_covered * 100) / DISTANCE;
 
         pos = (progress * 50) / 100;
-
-        std::cout << "\033[" << line << ";0H\033[K\033[" << pos << "C┌--|▀▀----▀▀\\";
-        std::cout << "\033[" << (line + 1) << ";0H\033[K\033[" << pos << "C│ -|CAR: " << (id + 1) << " |";
-        std::cout << "\033[" << (line + 2) << ";0H\033[K\033[" << pos << "C└--|▄▄----▄▄/";
+        std::cout << "\033[" << line     << ";0H\033[K\033[" << pos << "C    ______";
+        std::cout << "\033[" << (line+1) << ";0H\033[K\033[" << pos << "C __/  __  \\__";
+        std::cout << "\033[" << (line+2) << ";0H\033[K\033[" << pos << "C'---O----O----'" ;
         fflush(stdout);
 
         usleep(1000000 / speed);
@@ -39,7 +37,6 @@ void Car::drive_stage(int stage) {
 
     std::cout << "\033[" << (line + 3) << ";0H\033[K";
 
-    // Отправляем сообщение арбитру
     Message msg;
     msg.mtype = MSG_FINISH_STAGE;
     msg.car_id = id;
