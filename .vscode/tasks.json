@@ -1,0 +1,30 @@
+{
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++ сборка гонок",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-std=c++11",
+                "-Wall",
+                "-g",
+                "${workspaceFolder}/main.cpp",
+                "${workspaceFolder}/barrier.cpp",
+                "${workspaceFolder}/car.cpp",
+                "-o",
+                "${workspaceFolder}/race"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Сборка проекта гоночных автомобилей"
+        }
+    ]
+}
