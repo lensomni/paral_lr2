@@ -1,7 +1,8 @@
 #include "car.h"
 
 Car::Car(int id, Barrier& barrier) : id(id), barrier(barrier) {
-    speed = 100 + (rand() % 21);  // 10–30 м/с
+    srand(time(NULL) + id);
+    speed = 100 + (rand() % 51);  // 10–30 м/с
 }
 
 void Car::drive_stage(int stage) {
