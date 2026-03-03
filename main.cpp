@@ -2,10 +2,10 @@
 #include "barrier.h"
 #include "car.h"
 #include <iostream>
+#include <vector>
+#include <algorithm>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <ctime>
-#include <cstdlib>
 
 int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
@@ -24,10 +24,6 @@ int main() {
             car.race();
             exit(0);
         }
-        else if (pids[i] < 0) {
-            perror("fork");
-            exit(1);
-        }
     }
 
     int total_points[MAX_CARS] = {0};
@@ -35,59 +31,61 @@ int main() {
     for (int stage = 1; stage <= STAGES; ++stage) {
         std::cout << "\n=== ЭТАП " << stage << " ===\n";
 
-        // Отправляем сигнал о начале этапа
-        Message start_msg;
+        // 1. Отправляем сигнал старта всем машинам
+        Message start_msg{};
         start_msg.mtype = MSG_START_STAGE;
         start_msg.stage = stage;
         for (int i = 0; i < MAX_CARS; ++i) {
-            msgsnd(barrier.msgid, &start_msg, sizeof(Message) - sizeof(long), 0);
-            std::cout << "сигнал start" << i << "\n";
-        }
-
-        // Ждём завершения этапа всеми автомобилями
-        Message results[MAX_CARS];
-        for (int i = 0; i < MAX_CARS; ++i) {
-            msgrcv(barrier.msgid, &results[i], sizeof(Message) - sizeof(long), MSG_FINISH_STAGE, 0);
-            std::cout << "сигнал finish" << i << "\n";
-        }
-
-        // Сортируем по времени финиша
-        for (int i = 0; i < MAX_CARS - 1; ++i) {
-            for (int j = 0; j < MAX_CARS - i - 1; ++j) {
-                if (results[j].finish_time > results[j + 1].finish_time) {
-                    std::swap(results[j], results[j + 1]);
-                }
+            if (msgsnd(barrier.msgid, &start_msg, sizeof(Message) - sizeof(long), 0) == -1) {
+                perror("msgsnd start");
+                exit(1);
             }
         }
 
-        // Начисляем баллы и места
-        int points_table[] = {25, 18, 15, 12, 10};
+        // 2. Ждём финиша всех машин
+        std::vector<Message> results;
         for (int i = 0; i < MAX_CARS; ++i) {
+            Message msg;
+            if (msgrcv(barrier.msgid, &msg, sizeof(Message) - sizeof(long), MSG_FINISH_STAGE, 0) == -1) {
+                perror("msgrcv finish");
+                exit(1);
+            }
+            results.push_back(msg);
+        }
+
+        // 3. Сортируем по времени финиша
+        std::sort(results.begin(), results.end(), [](const Message& a, const Message& b) {
+            return a.finish_time_ms < b.finish_time_ms;
+        });
+
+        // 4. Начисляем места и баллы
+        int points_table[] = {25, 18, 15, 12, 10};
+        for (size_t i = 0; i < results.size(); ++i) {
             results[i].place = i + 1;
             results[i].points = points_table[i];
             total_points[results[i].car_id] += results[i].points;
         }
 
-        // Выводим таблицу результатов этапа
+        // 5. Выводим таблицу
         std::cout << "\nРезультаты этапа " << stage << ":\n";
-        std::cout << "┌─────┬────────────┬────────────┬────────┐\n";
-        std::cout << "│ Место │ Машина №   │ Время (мс) │ Баллы  │\n";
-        std::cout << "├─────┼────────────┼────────────┼────────┤\n";
-        for (int i = 0; i < MAX_CARS; ++i) {
-            std::cout << "│  " << results[i].place
-                    << "  │     " << results[i].car_id + 1
-                    << "     │    " << results[i].finish_time
-                    << "    │  " << results[i].points << "   │\n";
+        std::cout << "┌─────┬────────────┬───────────────┬────────┐\n";
+        std::cout << "│ Место │ Машина №   │ Время (мс)    │ Баллы  │\n";
+        std::cout << "├─────┼────────────┼───────────────┼────────┤\n";
+        for (const auto& r : results) {
+            std::cout << "│  " << r.place 
+                      << "  │     " << r.car_id + 1 
+                      << "     │ " << r.finish_time_ms 
+                      << " │  " << r.points << "   │\n";
         }
-        std::cout << "└─────┴────────────┴────────────┴────────┘\n";
+        std::cout << "└─────┴────────────┴───────────────┴────────┘\n";
 
-        // Выводим промежуточные баллы
         std::cout << "\nПромежуточные баллы:\n";
         for (int i = 0; i < MAX_CARS; ++i) {
             std::cout << "Машина " << i + 1 << ": " << total_points[i] << " баллов\n";
         }
     }
 
+    // Итоговая таблица
     std::cout << "\n=== ИТОГОВАЯ ТАБЛИЦА ===\n";
     std::cout << "┌────────────┬────────────┐\n";
     std::cout << "│ Машина №   │ Общие баллы│\n";
@@ -97,12 +95,11 @@ int main() {
     }
     std::cout << "└────────────┴────────────┘\n";
 
+    // Ожидание завершения
     for (int i = 0; i < MAX_CARS; ++i) {
-        int status;
-        waitpid(pids[i], &status, 0);
-        std::cout << "[Арбитр] Машина " << i + 1 << " завершила гонку.\n";
+        waitpid(pids[i], nullptr, 0);
     }
 
-    std::cout << "\n🏆 Все машины финишировали! Гонка окончена.\n";
+    std::cout << "\n🏆 Гонка завершена!\n";
     return 0;
 }

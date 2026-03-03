@@ -2,13 +2,12 @@
 #include "common.h"
 
 class Barrier {
-//private:
 public:
     int msgid;
     int car_count;
 
-public:
     Barrier(key_t key, int cars = MAX_CARS);
     ~Barrier();
-    void wait(int car_id, int stage);   // каждый автомобиль вызывает после финиша этапа
+    void wait_finish(int car_id, int stage);  // машина сообщает о финише
+    void wait_start(int stage);               // машина ждёт старта этапа
 };
