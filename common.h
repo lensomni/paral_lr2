@@ -9,7 +9,7 @@
 
 #define MAX_CARS  5
 #define STAGES    3
-#define DISTANCE  10000  
+#define DISTANCE  20000  
 
 #define MSG_START_STAGE   1
 #define MSG_FINISH_STAGE  2

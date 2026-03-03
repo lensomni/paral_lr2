@@ -34,8 +34,9 @@ int main() {
     int total_points[MAX_CARS] = {0};
 
     for (int stage = 1; stage <= STAGES; ++stage) {
+        std::cout << "\033c";
         std::cout << "\n=== ЭТАП " << stage << " ===\n";
-
+                
         Message start_msg{};
         start_msg.mtype = MSG_START_STAGE;
         start_msg.stage = stage;
@@ -83,6 +84,7 @@ int main() {
             std::cout << "\nНажмите Enter, чтобы продолжить...";
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cin.get();
+            
         }
     }
 
