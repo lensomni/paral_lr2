@@ -30,7 +30,6 @@ void Barrier::wait(int car_id, int stage) {
 
     //std::cout << "[Машина " << car_id + 1 << "] Сообщил о финише этапа " << stage << "\n";
 
-
     if (msgrcv(msgid, &msg, sizeof(Message) - sizeof(long), MSG_FINISH_STAGE, 0) == -1) {
         perror("msgrcv (barrier wait)");
         exit(1);

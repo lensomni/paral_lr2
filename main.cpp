@@ -18,7 +18,6 @@ int main() {
 
     pid_t pids[MAX_CARS];
 
-    // Запускаем 5 автомобилей
     for (int i = 0; i < MAX_CARS; ++i) {
         pids[i] = fork();
         if (pids[i] == 0) {             

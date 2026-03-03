@@ -9,8 +9,8 @@ void Car::drive_stage(int stage) {
     timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    std::cout << "🚗 Машина " << (id + 1) << " начала этап " << stage
-              << " (скорость: " << speed << " м/с)" << std::endl;
+    // std::cout << "Машина " << (id + 1) << " начала этап " << stage
+    //           << " (скорость: " << speed << " м/с)" << std::endl;
 
     int distance_covered = 0;
     while (distance_covered < DISTANCE) {
