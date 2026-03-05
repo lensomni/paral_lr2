@@ -15,7 +15,7 @@ void Car::drive_stage(int stage) {
     std::cout << "\033[" << line     << ";0H\033[K\033[" << pos << "C    ______";
     std::cout << "\033[" << (line+1) << ";0H\033[K\033[" << pos << "C __/  __  \\__";
     std::cout << "\033[" << (line+2) << ";0H\033[K\033[" << pos << "C'---O----O----'" ;
-    fflush(stdout);
+    fflush(stdout); //попробовать убрать
 
     int distance_covered = 0;
     while (distance_covered < DISTANCE) {
@@ -51,7 +51,6 @@ void Car::race() {
         Message start_msg;
         msgrcv(barrier.msgid, &start_msg, sizeof(Message) - sizeof(long), MSG_START_STAGE, 0);
         drive_stage(stage);
-        //barrier.wait(id, stage);
     }
     //std::cout << "Машина №" << id + 1 << " завершила всю гонку!\n";
 }
