@@ -7,11 +7,23 @@
 #include <ctime>
 #include <cstdlib>
 #include <limits>
+#include <iomanip>
+
+struct CarStageResult {
+    long finish_time_ms;
+    int place;
+    int points;
+};
+
+struct CarTotalResult {
+    int car_id;
+    CarStageResult stage_results[STAGES];
+    int total_points;
+};
 
 int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
     srand(time(NULL));
-
 
     key_t barrier_key = ftok("/tmp", 'B');
     Barrier barrier(barrier_key);
@@ -20,7 +32,7 @@ int main() {
 
     for (int i = 0; i < MAX_CARS; ++i) {
         pids[i] = fork();
-        if (pids[i] == 0) {             
+        if (pids[i] == 0) {
             Car car(i, barrier);
             car.race();
             exit(0);
@@ -31,12 +43,16 @@ int main() {
         }
     }
 
-    int total_points[MAX_CARS] = {0};
+    CarTotalResult total_results[MAX_CARS];
+    for (int i = 0; i < MAX_CARS; ++i) {
+        total_results[i].car_id = i + 1;
+        total_results[i].total_points = 0;
+    }
 
     for (int stage = 1; stage <= STAGES; ++stage) {
         std::cout << "\033c";
         std::cout << "\n=== ЭТАП " << stage << " ===\n";
-                
+
         Message start_msg{};
         start_msg.mtype = MSG_START_STAGE;
         start_msg.stage = stage;
@@ -60,73 +76,70 @@ int main() {
             }
         }
 
-        int points_table[] = {25, 18, 15, 12, 10}; 
+        int points_table[] = {25, 18, 15, 12, 10};
         for (int i = 0; i < MAX_CARS; ++i) {
             results[i].place = i + 1;
             results[i].points = points_table[i];
-            total_points[results[i].car_id] += results[i].points;
-
+            total_results[results[i].car_id].stage_results[stage - 1] = {results[i].finish_time_ms, results[i].place, results[i].points};
+            total_results[results[i].car_id].total_points += results[i].points;
         }
 
-        std::cout << "\nРезультаты этапа " << stage << ":\n";
-        std::cout << "+-------+------------+------------+--------+\n";
-        std::cout << "| Место | Машина №  |   Время    | Баллы  |\n";
-        std::cout << "+-------+------------+------------+--------+\n";
+        std::cout << "\033[22;0H";
 
+        std::cout << "| Машина |";
+        for (int s = 1; s <= stage; ++s) {
+            std::cout << "      Этап " << s << "     |";
+        }
+        std::cout << "      Итог       |\n";
+
+        std::cout << "+--------+";
+        for (int s = 1; s <= stage; ++s) {
+            std::cout << "-----------------+";
+        }
+        std::cout << "-----------------+\n";
+
+        // Сортируем машины по итоговым баллам для определения итогового места
+        CarTotalResult sorted_results[MAX_CARS];
         for (int i = 0; i < MAX_CARS; ++i) {
-            printf("|   %2d  |     %2d     |  %6.2f с  |   %2d   |\n",
-                results[i].place,
-                results[i].car_id + 1,
-                results[i].finish_time_ms / 1000.0,
-                results[i].points);
+            sorted_results[i] = total_results[i];
         }
-        std::cout << "+-------+------------+------------+--------+\n";
-
-        if (stage < STAGES) {
-            std::cout << "\nНажмите Enter, чтобы продолжить...";
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cin.get();
-            
-        }
-    }
-
-    for (int i = 0; i < MAX_CARS; ++i) {
-        int status;
-        waitpid(pids[i], &status, 0);
-        //std::cout << "[Арбитр] Машина " << i + 1 << " завершила гонку.\n";
-    }
-
-    struct CarResult {
-        int car_id;
-        int points;
-    };
-    CarResult final_results[MAX_CARS];
-
-    for (int i = 0; i < MAX_CARS; ++i) {
-        final_results[i].car_id = i + 1;
-        final_results[i].points = total_points[i];
-    }
-
-    for (int i = 0; i < MAX_CARS - 1; ++i) {
-        for (int j = 0; j < MAX_CARS - i - 1; ++j) {
-            if (final_results[j].points < final_results[j + 1].points) {
-                std::swap(final_results[j], final_results[j + 1]);
+        for (int i = 0; i < MAX_CARS - 1; ++i) {
+            for (int j = 0; j < MAX_CARS - i - 1; ++j) {
+                if (sorted_results[j].total_points < sorted_results[j + 1].total_points) {
+                    std::swap(sorted_results[j], sorted_results[j + 1]);
+                }
             }
         }
-    }
 
-    std::cout << "\n=== ИТОГОВАЯ ТАБЛИЦА ===\n";
-    std::cout << "+------------+--------------+--------------+\n";
-    std::cout << "| Место      | Машина №     | Общие баллы |\n";
-    std::cout << "+------------+--------------+--------------+\n";
+        // Создаем массив для хранения итоговых мест
+        int final_places[MAX_CARS];
+        for (int i = 0; i < MAX_CARS; ++i) {
+            for (int j = 0; j < MAX_CARS; ++j) {
+                if (total_results[i].car_id == sorted_results[j].car_id) {
+                    final_places[i] = j + 1;
+                    break;
+                }
+            }
+        }
 
-    for (int i = 0; i < MAX_CARS; ++i) {
-        printf("|    %2d      |     %2d       |      %3d      |\n",
-            i + 1,
-            final_results[i].car_id,
-            final_results[i].points);
+        for (int i = 0; i < MAX_CARS; ++i) {
+            std::cout << "|   " << std::setw(2) << total_results[i].car_id << "   |";
+            for (int s = 0; s < stage; ++s) {
+                std::cout << " " << std::setw(2) << total_results[i].stage_results[s].place << " место"
+                        << " | " << std::setw(2) << total_results[i].stage_results[s].points << " б |";
+            }
+            std::cout << " " << std::setw(2) << final_places[i] << " место"
+                    << " |" << std::setw(3) << total_results[i].total_points << " б |\n";
+        }
+
+
+        if (stage < STAGES) {
+            std::cout << "\033[" << (22 + 7 + MAX_CARS) << ";0H";
+            std::cout << "Нажмите Enter, чтобы продолжить...";
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cin.get();
+        }
     }
-    std::cout << "+------------+--------------+--------------+\n";
 
     return 0;
 }
