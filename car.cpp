@@ -5,11 +5,12 @@
 
 Car::Car(int id, Barrier& barrier) : id(id), barrier(barrier) {
     srand(time(nullptr) + id);
-    speed = 100 + (rand() % 51);
+    //speed = 100 + (rand() % 51);
 }
 
 void Car::drive_stage(int stage) {
     barrier.waitAllReady(id);
+    speed = 100 + (rand() % 51);
 
     timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
