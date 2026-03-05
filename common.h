@@ -17,8 +17,5 @@
 struct Message {
     long mtype;
     int  car_id;
-    int  stage;
     long finish_time_ms;
-    int  place;
-    int  points;
 };

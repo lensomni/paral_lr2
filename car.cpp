@@ -17,11 +17,6 @@ void Car::drive_stage(int stage) {
     int line = 5 + id * 3;
     int pos = 0;
 
-    // std::cout << "\033[" << line     << ";0H\033[K\033[" << pos << "C    ______";
-    // std::cout << "\033[" << (line+1) << ";0H\033[K\033[" << pos << "C __/  __  \\__";
-    // std::cout << "\033[" << (line+2) << ";0H\033[K\033[" << pos << "C'---O----O----'" ;
-    // fflush(stdout);
-
     int distance_covered = 0;
     while (distance_covered < DISTANCE) {
         int progress = (distance_covered * 100) / DISTANCE;
@@ -44,7 +39,6 @@ void Car::drive_stage(int stage) {
     Message msg;
     msg.mtype = MSG_FINISH_STAGE;
     msg.car_id = id;
-    msg.stage = stage;
     msg.finish_time_ms = static_cast<long>(elapsed);
     msgsnd(barrier.getMsgQueueId(), &msg, sizeof(Message) - sizeof(long), 0);
 }

@@ -69,10 +69,10 @@ int main() {
 
         int points_table[] = {25, 18, 15, 12, 10};
         for (int i = 0; i < MAX_CARS; ++i) {
-            results[i].place = i + 1;
-            results[i].points = points_table[i];
-            total_results[results[i].car_id].stage_results[stage - 1] = {results[i].finish_time_ms, results[i].place, results[i].points};
-            total_results[results[i].car_id].total_points += results[i].points;
+            int place = i + 1;
+            int points = points_table[i];
+            total_results[results[i].car_id].stage_results[stage - 1] = {results[i].finish_time_ms, place, points};
+            total_results[results[i].car_id].total_points += points;
         }
 
         std::cout << "\033[22;0H";
