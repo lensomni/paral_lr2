@@ -1,26 +1,30 @@
 #include "car.h"
+#include "common.h"
+#include <sys/time.h>
+#include <iostream>
 
 Car::Car(int id, Barrier& barrier) : id(id), barrier(barrier) {
-    srand(time(NULL) + id);
-    speed = 100 + (rand() % 51);  
+    srand(time(nullptr) + id);
+    speed = 100 + (rand() % 51);
 }
 
 void Car::drive_stage(int stage) {
+    barrier.waitAllReady(id);
+
     timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     int line = 5 + id * 3;
-    int pos = 0; 
+    int pos = 0;
 
-    std::cout << "\033[" << line     << ";0H\033[K\033[" << pos << "C    ______";
-    std::cout << "\033[" << (line+1) << ";0H\033[K\033[" << pos << "C __/  __  \\__";
-    std::cout << "\033[" << (line+2) << ";0H\033[K\033[" << pos << "C'---O----O----'" ;
-    fflush(stdout); //попробовать убрать
+    // std::cout << "\033[" << line     << ";0H\033[K\033[" << pos << "C    ______";
+    // std::cout << "\033[" << (line+1) << ";0H\033[K\033[" << pos << "C __/  __  \\__";
+    // std::cout << "\033[" << (line+2) << ";0H\033[K\033[" << pos << "C'---O----O----'" ;
+    // fflush(stdout);
 
     int distance_covered = 0;
     while (distance_covered < DISTANCE) {
         int progress = (distance_covered * 100) / DISTANCE;
-
         pos = (progress * 50) / 100;
         std::cout << "\033[" << line     << ";0H\033[K\033[" << pos << "C    ______";
         std::cout << "\033[" << (line+1) << ";0H\033[K\033[" << pos << "C __/  __  \\__";
@@ -42,15 +46,11 @@ void Car::drive_stage(int stage) {
     msg.car_id = id;
     msg.stage = stage;
     msg.finish_time_ms = static_cast<long>(elapsed);
-    msgsnd(barrier.msgid, &msg, sizeof(Message) - sizeof(long), 0);
+    msgsnd(barrier.getMsgQueueId(), &msg, sizeof(Message) - sizeof(long), 0);
 }
-
 
 void Car::race() {
     for (int stage = 1; stage <= STAGES; ++stage) {
-        Message start_msg;
-        msgrcv(barrier.msgid, &start_msg, sizeof(Message) - sizeof(long), MSG_START_STAGE, 0);
         drive_stage(stage);
     }
-    //std::cout << "Машина №" << id + 1 << " завершила всю гонку!\n";
 }

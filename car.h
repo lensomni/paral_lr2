@@ -9,6 +9,6 @@ private:
 
 public:
     Car(int id, Barrier& barrier);
-    void race();                   
-    void drive_stage(int stage);   
+    void race();
+    void drive_stage(int stage);
 };

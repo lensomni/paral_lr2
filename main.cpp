@@ -23,21 +23,19 @@ struct CarTotalResult {
 
 int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
-    srand(time(NULL));
+    srand(time(nullptr));
 
-    key_t barrier_key = ftok("/tmp", 'B');
-    Barrier barrier(barrier_key);
+    key_t msg_key = ftok("/tmp", 'B');
+    Barrier barrier(MAX_CARS, msg_key);
 
     pid_t pids[MAX_CARS];
-
     for (int i = 0; i < MAX_CARS; ++i) {
         pids[i] = fork();
         if (pids[i] == 0) {
             Car car(i, barrier);
             car.race();
             exit(0);
-        }
-        else if (pids[i] < 0) {
+        } else if (pids[i] < 0) {
             perror("fork");
             exit(1);
         }
@@ -53,19 +51,12 @@ int main() {
         std::cout << "\033c";
         std::cout << "\n=== ЭТАП " << stage << " ===\n";
 
-        Message start_msg{};
-        start_msg.mtype = MSG_START_STAGE;
-        start_msg.stage = stage;
-        for (int i = 0; i < MAX_CARS; ++i) {
-            if (msgsnd(barrier.msgid, &start_msg, sizeof(Message) - sizeof(long), 0) == -1) {
-                perror("msgsnd start");
-                exit(1);
-            }
-        }
+        barrier.startStage();
+        barrier.waitStageEnd();
 
         Message results[MAX_CARS];
         for (int i = 0; i < MAX_CARS; ++i) {
-            msgrcv(barrier.msgid, &results[i], sizeof(Message) - sizeof(long), MSG_FINISH_STAGE, 0);
+            msgrcv(barrier.getMsgQueueId(), &results[i], sizeof(Message) - sizeof(long), MSG_FINISH_STAGE, 0);
         }
 
         for (int i = 0; i < MAX_CARS - 1; ++i) {
@@ -98,7 +89,6 @@ int main() {
         }
         std::cout << "-----------------+\n";
 
-        // Сортируем машины по итоговым баллам для определения итогового места
         CarTotalResult sorted_results[MAX_CARS];
         for (int i = 0; i < MAX_CARS; ++i) {
             sorted_results[i] = total_results[i];
@@ -111,7 +101,6 @@ int main() {
             }
         }
 
-        // Создаем массив для хранения итоговых мест
         int final_places[MAX_CARS];
         for (int i = 0; i < MAX_CARS; ++i) {
             for (int j = 0; j < MAX_CARS; ++j) {
@@ -126,12 +115,12 @@ int main() {
             std::cout << "|   " << std::setw(2) << total_results[i].car_id << "   |";
             for (int s = 0; s < stage; ++s) {
                 std::cout << " " << std::setw(2) << total_results[i].stage_results[s].place << " место"
-                        << " | " << std::setw(2) << total_results[i].stage_results[s].points << " б |";
+                          << " | " << std::setw(2) << total_results[i].stage_results[s].points << " б |";
             }
             std::cout << " " << std::setw(2) << final_places[i] << " место"
-                    << " |" << std::setw(3) << total_results[i].total_points << " б |\n";
+                      << " |" << std::setw(3) << total_results[i].total_points << " б |\n";
         }
-
+        std::cout << "\n\n";
 
         if (stage < STAGES) {
             std::cout << "\033[" << (22 + 7 + MAX_CARS) << ";0H";
