@@ -12,6 +12,7 @@
                 "${workspaceFolder}/main.cpp",
                 "${workspaceFolder}/barrier.cpp",
                 "${workspaceFolder}/car.cpp",
+                "${workspaceFolder}/results.cpp",
                 "-o",
                 "${workspaceFolder}/race"
             ],
