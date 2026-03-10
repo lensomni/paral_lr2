@@ -8,13 +8,32 @@
 #include <ctime>
 #include <cstdlib>
 #include <limits>
+#include <vector>
+#include <fcntl.h>
+#include <sys/file.h>
+#include <errno.h>
 
 int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
     srand(time(nullptr));
-
     key_t msg_key = ftok("/tmp", 'B');
     Barrier barrier(MAX_CARS, msg_key);
+    int msgid = barrier.getMsgQueueId();
+
+    std::vector<int> stage_fds(STAGES, -1);
+    for (int s = 1; s <= STAGES; ++s) {
+        std::string path = "/tmp/stage" + std::to_string(s) + ".lock";
+        int fd = open(path.c_str(), O_RDWR | O_CREAT, 0666);
+        if (fd < 0) {
+            perror("open lock");
+            exit(1);
+        }
+        if (flock(fd, LOCK_EX) == -1) {
+            perror("flock EX");
+            exit(1);
+        }
+        stage_fds[s-1] = fd;
+    }
 
     pid_t pids[MAX_CARS];
     for (int i = 0; i < MAX_CARS; ++i) {
@@ -35,17 +54,58 @@ int main() {
         total_results[i].total_points = 0;
     }
 
+    int positions[MAX_CARS] = {0};
+
     for (int stage = 1; stage <= STAGES; ++stage) {
         std::cout << "\033c";
         std::cout << "\n=== ЭТАП " << stage << " ===\n";
 
-        barrier.startStage();
-        barrier.waitStageEnd();
-
-        Message results[MAX_CARS];
-        for (int i = 0; i < MAX_CARS; ++i) {
-            msgrcv(barrier.getMsgQueueId(), &results[i], sizeof(Message) - sizeof(long), MSG_FINISH_STAGE, 0);
+        int idx = stage - 1;
+        if (flock(stage_fds[idx], LOCK_UN) == -1) {
+            perror("flock UN in main");
         }
+        close(stage_fds[idx]);
+        stage_fds[idx] = -1;
+
+        for (int i = 0; i < MAX_CARS; ++i) positions[i] = 0;
+
+        int finished_count = 0;
+        Message results[MAX_CARS];
+        int result_idx = 0;
+
+        while (finished_count < MAX_CARS) {
+            Message msg;
+            while (msgrcv(msgid, &msg, sizeof(Message) - sizeof(long), 0, IPC_NOWAIT) != -1) {
+                if (msg.mtype == MSG_PROGRESS) {
+                    positions[msg.car_id] = msg.current_distance;
+                }
+                if (msg.mtype == MSG_FINISH_STAGE) {
+                    results[result_idx++] = msg;
+                    finished_count++;
+                }
+            }
+            if (errno == ENOMSG) errno = 0;
+
+            std::cout << "\033c";
+            std::cout << "\n=== ЭТАП " << stage << " ===\n";
+            for (int i = 0; i < MAX_CARS; ++i) {
+                int progress = (positions[i] * 100) / DISTANCE;
+                int pos = (progress * 50) / 100;
+                int line = 5 + i * 3;
+
+                std::cout << "\033[" << line     << ";0H\033[K\033[" << pos << "C    ______";
+                std::cout << "\033[" << (line+1) << ";0H\033[K\033[" << pos << "C __/  __  \\__";
+                std::cout << "\033[" << (line+2) << ";0H\033[K\033[" << pos << "C'---O----O----'" ;
+            }
+            fflush(stdout);
+
+            usleep(30000);
+        }
+
+        while (!barrier.allCarsArrived(stage)) {
+            usleep(1000);
+        }
+        barrier.releaseNextStage(stage);
 
         processStageResults(stage, results, total_results);
         printResults(stage, total_results);
@@ -56,6 +116,17 @@ int main() {
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cin.get();
         }
+    }
+
+    for (int fd : stage_fds) {
+        if (fd != -1) {
+            flock(fd, LOCK_UN);
+            close(fd);
+        }
+    }
+
+    for (int i = 0; i < MAX_CARS; ++i) {
+        waitpid(pids[i], nullptr, 0);
     }
 
     return 0;

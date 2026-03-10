@@ -1,47 +1,96 @@
 #include "barrier.h"
 
 Barrier::Barrier(int cars, key_t msg_key) : car_count(cars) {
+    shmid = shmget(IPC_PRIVATE, sizeof(SharedState), 0666 | IPC_CREAT);
+    if (shmid == -1) {
+        perror("shmget");
+        exit(1);
+    }
 
-    shmid = shmget(IPC_PRIVATE, sizeof(BarrierStatus), 0666);
-    status = (BarrierStatus*)shmat(shmid, nullptr, 0);
-    status->isAllReady = false;
-    status->countWait = 0;
+    status = (SharedState*) shmat(shmid, nullptr, 0);
+    if (status == (SharedState*)-1) {
+        perror("shmat");
+        exit(1);
+    }
+
+    status->releaseStage = 0;
+    for (int i = 0; i < MAX_CARS; ++i) {
+        status->arrivedStage[i] = 0;
+    }
 
     msgid = msgget(msg_key, IPC_CREAT | 0666);
     if (msgid == -1) {
-        perror("msgget (barrier)");
+        perror("msgget");
         exit(1);
     }
 }
 
 Barrier::~Barrier() {
-    shmdt(status);
-    shmctl(shmid, IPC_RMID, nullptr);
-    msgctl(msgid, IPC_RMID, nullptr);
+    if (status != (SharedState*)-1) {
+        shmdt(status);
+    }
+    if (shmid != -1) {
+        shmctl(shmid, IPC_RMID, nullptr);
+    }
+    if (msgid != -1) {
+        msgctl(msgid, IPC_RMID, nullptr);
+    }
 }
 
-void Barrier::waitAllReady(int car_id) {
-    status->countWait++;
-    while (!status->isAllReady) {
-        usleep(1000);
+// Для машин — ожидание старта этапа через flock
+void Barrier::waitStageStart(int stage) {
+    std::string path = "/tmp/stage" + std::to_string(stage) + ".lock";
+
+    int fd = open(path.c_str(), O_RDWR);
+    if (fd == -1) {
+        perror("open stage lock (car)");
+        exit(1);
     }
-    status->countWait--;
+
+    // Блокируемся, пока арбитр держит эксклюзивную блокировку
+    if (flock(fd, LOCK_SH) == -1) {
+        perror("flock LOCK_SH (car)");
+        close(fd);
+        exit(1);
+    }
+
+    // Как только арбитр отпустил — сразу выходим
+    flock(fd, LOCK_UN);
+    close(fd);
 }
 
-void Barrier::startStage() {
-    while (status->countWait < car_count) {
-        usleep(1000);
-    }
-    status->isAllReady = true;
+// Машина сообщает, что доехала до конца этапа
+void Barrier::markArrived(int car_id, int stage) {
+    if (car_id < 0 || car_id >= MAX_CARS) return;
+    status->arrivedStage[car_id] = stage;
 }
 
-void Barrier::waitStageEnd() {
-    while (status->countWait != 0) {
+// Машина ждёт разрешения от арбитра на следующий этап
+void Barrier::waitForRelease(int stage) {
+    while (status->releaseStage < stage) {
         usleep(1000);
     }
-    status->isAllReady = false;
+}
+
+// Арбитр проверяет, все ли машины завершили этап
+bool Barrier::allCarsArrived(int stage) const {
+    for (int i = 0; i < car_count; ++i) {
+        if (status->arrivedStage[i] < stage) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Арбитр разрешает переход к следующему этапу
+void Barrier::releaseNextStage(int stage) {
+    status->releaseStage = stage;
 }
 
 int Barrier::getMsgQueueId() const {
     return msgid;
+}
+
+SharedState* Barrier::getSharedState() const {
+    return status;
 }

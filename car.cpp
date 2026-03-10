@@ -5,43 +5,49 @@
 
 Car::Car(int id, Barrier& barrier) : id(id), barrier(barrier) {
     srand(time(nullptr) + id);
-    //speed = 100 + (rand() % 51);
 }
 
 void Car::drive_stage(int stage) {
-    barrier.waitAllReady(id);
-    speed = 100 + (rand() % 51);
+    barrier.waitStageStart(stage);
 
     timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int line = 5 + id * 3;
-    int pos = 0;
-
     int distance_covered = 0;
     while (distance_covered < DISTANCE) {
-        int progress = (distance_covered * 100) / DISTANCE;
-        pos = (progress * 50) / 100;
-        std::cout << "\033[" << line     << ";0H\033[K\033[" << pos << "C    ______";
-        std::cout << "\033[" << (line+1) << ";0H\033[K\033[" << pos << "C __/  __  \\__";
-        std::cout << "\033[" << (line+2) << ";0H\033[K\033[" << pos << "C'---O----O----'" ;
-        fflush(stdout);
+        speed = 100 + (rand() % 81);
+        distance_covered += speed;
+        if (distance_covered > DISTANCE) distance_covered = DISTANCE;
+
+        Message msg;
+        msg.mtype = MSG_PROGRESS;
+        msg.car_id = id;
+        msg.current_distance = distance_covered;
+        msg.finished = 0;
+        msg.finish_time_ms = 0;
+        if (msgsnd(barrier.getMsgQueueId(), &msg, sizeof(Message) - sizeof(long), 0) == -1) {
+            perror("msgsnd progress");
+        }
 
         usleep(1000000 / speed);
-        distance_covered += speed;
     }
 
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed = (end.tv_sec - start.tv_sec) * 1000.0;
     elapsed += (end.tv_nsec - start.tv_nsec) / 1000000.0;
 
-    std::cout << "\033[" << (line + 3) << ";0H\033[K";
+    Message finish_msg;
+    finish_msg.mtype = MSG_FINISH_STAGE;
+    finish_msg.car_id = id;
+    finish_msg.current_distance = DISTANCE;
+    finish_msg.finish_time_ms = static_cast<long>(elapsed);
+    finish_msg.finished = 1;
+    if (msgsnd(barrier.getMsgQueueId(), &finish_msg, sizeof(Message) - sizeof(long), 0) == -1) {
+        perror("msgsnd finish");
+    }
 
-    Message msg;
-    msg.mtype = MSG_FINISH_STAGE;
-    msg.car_id = id;
-    msg.finish_time_ms = static_cast<long>(elapsed);
-    msgsnd(barrier.getMsgQueueId(), &msg, sizeof(Message) - sizeof(long), 0);
+    barrier.markArrived(id, stage);
+    barrier.waitForRelease(stage);
 }
 
 void Car::race() {

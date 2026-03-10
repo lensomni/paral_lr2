@@ -1,21 +1,22 @@
 #pragma once
-
 #include <sys/msg.h>
 #include <sys/ipc.h>
 #include <iostream>
 #include <unistd.h>
 #include <cstdlib>
 #include <ctime>
+#include <string> 
 
-#define MAX_CARS  5
-#define STAGES    3
-#define DISTANCE  20000
-
-#define MSG_START_STAGE   1
-#define MSG_FINISH_STAGE  2
+#define MAX_CARS 5
+#define STAGES 3
+#define DISTANCE 30000
+#define MSG_PROGRESS 10
+#define MSG_FINISH_STAGE 2
 
 struct Message {
     long mtype;
-    int  car_id;
+    int car_id;
+    int current_distance;
     long finish_time_ms;
+    int finished;
 };
