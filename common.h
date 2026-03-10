@@ -17,6 +17,5 @@ struct Message {
     long mtype;
     int car_id;
     int current_distance;
-    long finish_time_ms;
-    int finished;
+    //long finish_time_ms;
 };

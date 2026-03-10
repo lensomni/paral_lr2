@@ -1,22 +1,22 @@
 #include "results.h"
 
-void processStageResults(int stage, Message results[MAX_CARS], CarTotalResult total_results[MAX_CARS]) {
-    for (int i = 0; i < MAX_CARS - 1; ++i) {
-        for (int j = 0; j < MAX_CARS - i - 1; ++j) {
-            if (results[j].finish_time_ms > results[j + 1].finish_time_ms) {
-                std::swap(results[j], results[j + 1]);
-            }
-        }
-    }
+// void processStageResults(int stage, Message results[MAX_CARS], CarTotalResult total_results[MAX_CARS]) {
+//     for (int i = 0; i < MAX_CARS - 1; ++i) {
+//         for (int j = 0; j < MAX_CARS - i - 1; ++j) {
+//             if (results[j].finish_time_ms > results[j + 1].finish_time_ms) {
+//                 std::swap(results[j], results[j + 1]);
+//             }
+//         }
+//     }
 
-    int points_table[] = {25, 18, 15, 12, 10};
-    for (int i = 0; i < MAX_CARS; ++i) {
-        int place = i + 1;
-        int points = points_table[i];
-        total_results[results[i].car_id].stage_results[stage - 1] = {results[i].finish_time_ms, place, points};
-        total_results[results[i].car_id].total_points += points;
-    }
-}
+//     int points_table[] = {25, 18, 15, 12, 10};
+//     for (int i = 0; i < MAX_CARS; ++i) {
+//         int place = i + 1;
+//         int points = points_table[i];
+//         total_results[results[i].car_id].stage_results[stage - 1] = {results[i].finish_time_ms, place, points};
+//         total_results[results[i].car_id].total_points += points;
+//     }
+// }
 
 void printResults(int stage, CarTotalResult total_results[MAX_CARS]) {
     std::cout << "\033[22;0H";
@@ -33,7 +33,7 @@ void printResults(int stage, CarTotalResult total_results[MAX_CARS]) {
     }
     std::cout << "-----------------+\n";
 
-
+    // Сортировка по сумме очков для итогового места
     CarTotalResult sorted_results[MAX_CARS];
     for (int i = 0; i < MAX_CARS; ++i) {
         sorted_results[i] = total_results[i];
@@ -46,6 +46,7 @@ void printResults(int stage, CarTotalResult total_results[MAX_CARS]) {
         }
     }
 
+    // Вычисляем итоговые места по очкам
     int final_places[MAX_CARS];
     for (int i = 0; i < MAX_CARS; ++i) {
         for (int j = 0; j < MAX_CARS; ++j) {
@@ -67,3 +68,8 @@ void printResults(int stage, CarTotalResult total_results[MAX_CARS]) {
     }
     std::cout << "\n\n";
 }
+
+
+
+
+
