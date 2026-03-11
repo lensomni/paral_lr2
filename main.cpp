@@ -62,7 +62,6 @@ int main() {
         }
     }
 
-    // Массив мест по этапам: stage_places[stage-1][car_id 0..4] = место 1..5
     int stage_places[STAGES][MAX_CARS] = {0};
 
     for (int stage = 1; stage <= STAGES; ++stage) {
@@ -111,7 +110,7 @@ int main() {
             }
             fflush(stdout);
 
-            usleep(30000);  // ~6–7 кадров в секунду
+            usleep(30000); 
         }
 
         // Барьер: ждём, пока все отметились

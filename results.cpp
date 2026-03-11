@@ -68,8 +68,3 @@ void printResults(int stage, CarTotalResult total_results[MAX_CARS]) {
     }
     std::cout << "\n\n";
 }
-
-
-
-
-
